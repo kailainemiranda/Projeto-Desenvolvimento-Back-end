@@ -19,8 +19,8 @@ class Pedido {
       db.serialize(() => {
         db.run('BEGIN TRANSACTION');
         db.run(
-          'INSERT INTO pedidos (clienteId, total) VALUES (?, ?)',
-          [clienteId, total],
+          'INSERT INTO pedidos (clienteId, total, status) VALUES (?, ?, ?)',
+          [clienteId, total, 'RECEBIDO'],
           function inserirPedido(error) {
             if (error) {
               db.run('ROLLBACK', () => fecharBanco(db).then(() => reject(error)));
@@ -72,7 +72,7 @@ class Pedido {
     return new Promise((resolve, reject) => {
       const db = abrirBanco();
       const query = `
-        SELECT p.id AS pedidoId, p.clienteId, p.total, p.dataCriacao,
+        SELECT p.id AS pedidoId, p.clienteId, p.total, p.status, p.dataCriacao,
                i.id AS itemId, i.produto, i.quantidade, i.precoUnitario
         FROM pedidos p
         LEFT JOIN itens_pedido i ON p.id = i.pedidoId
@@ -95,7 +95,7 @@ class Pedido {
     return new Promise((resolve, reject) => {
       const db = abrirBanco();
       const query = `
-        SELECT p.id AS pedidoId, p.clienteId, p.total, p.dataCriacao,
+        SELECT p.id AS pedidoId, p.clienteId, p.total, p.status, p.dataCriacao,
                i.id AS itemId, i.produto, i.quantidade, i.precoUnitario
         FROM pedidos p
         LEFT JOIN itens_pedido i ON p.id = i.pedidoId
@@ -114,6 +114,18 @@ class Pedido {
     });
   }
 
+  static atualizarStatus(id, status) {
+    return new Promise((resolve, reject) => {
+      const db = abrirBanco();
+      db.run('UPDATE pedidos SET status = ? WHERE id = ?', [status, id], (error) => {
+        fecharBanco(db).then(() => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+    });
+  }
+
   static agruparResultados(rows) {
     const pedidos = new Map();
 
@@ -123,6 +135,7 @@ class Pedido {
           id: row.pedidoId,
           clienteId: row.clienteId,
           total: row.total,
+          status: row.status,
           dataCriacao: row.dataCriacao,
           itens: []
         });

@@ -27,7 +27,13 @@ exports.criarPedido = async (req, res) => {
 
     const pedidoId = await Pedido.criar(clienteId, itens, total);
 
-    return res.status(201).json({ id: pedidoId, clienteId, total, mensagem: 'Pedido criado com sucesso' });
+    return res.status(201).json({
+      id: pedidoId,
+      clienteId,
+      total,
+      status: 'RECEBIDO',
+      mensagem: 'Pedido registrado na rede Raízes do Nordeste'
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -51,6 +57,25 @@ exports.buscarPedidoPorId = async (req, res) => {
     }
 
     return res.status(200).json(pedido);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.cancelarPedido = async (req, res) => {
+  try {
+    const pedido = await Pedido.buscarPorId(req.params.id);
+
+    if (!pedido) {
+      return res.status(404).json({ error: 'Pedido não encontrado.' });
+    }
+
+    if (pedido.status !== 'RECEBIDO') {
+      return res.status(409).json({ error: 'Apenas pedidos recebidos podem ser cancelados.' });
+    }
+
+    await Pedido.atualizarStatus(req.params.id, 'CANCELADO');
+    return res.status(200).json({ id: pedido.id, status: 'CANCELADO' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

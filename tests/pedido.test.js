@@ -43,6 +43,7 @@ describe('POST /api/pedidos', () => {
     expect(response.body).toHaveProperty('id');
     expect(response.body).toHaveProperty('clienteId', 10);
     expect(response.body.total).toBeCloseTo(11.98);
+    expect(response.body.status).toBe('RECEBIDO');
   });
 
   it('retorna 400 para solicitação sem clienteId', async () => {
@@ -90,5 +91,17 @@ describe('GET /api/pedidos', () => {
 
     expect(response.status).toBe(404);
     expect(response.body.error).toBe('Pedido não encontrado.');
+  });
+
+  it('cancela um pedido que ainda está recebido', async () => {
+    const created = await request(app)
+      .post('/api/pedidos')
+      .send({ clienteId: 30, itens: [{ produto: 'Farinha', quantidade: 1, precoUnitario: 7.5 }] });
+
+    const response = await request(app)
+      .patch(`/api/pedidos/${created.body.id}/cancelamento`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: created.body.id, status: 'CANCELADO' });
   });
 });

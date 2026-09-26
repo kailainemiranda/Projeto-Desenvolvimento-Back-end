@@ -10,6 +10,7 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       clienteId INTEGER NOT NULL,
       total REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'RECEBIDO',
       dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -24,6 +25,12 @@ db.serialize(() => {
       FOREIGN KEY (pedidoId) REFERENCES pedidos(id)
     )
   `);
+
+  db.run(`ALTER TABLE pedidos ADD COLUMN status TEXT NOT NULL DEFAULT 'RECEBIDO'`, (error) => {
+    if (error && !error.message.includes('duplicate column name')) {
+      console.error('Erro ao atualizar a tabela pedidos:', error.message);
+    }
+  });
 
   console.log('Banco de dados inicializado com sucesso.');
 });

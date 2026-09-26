@@ -8,7 +8,7 @@ A aplicação disponibiliza uma API RESTful para registrar pedidos, validar seus
 
 ## Escopo atual
 
-Nesta versão, o sistema concentra-se no fluxo de **criação e consulta de pedidos**. Cada pedido possui um cliente e uma lista de itens, contendo produto, quantidade e preço unitário.
+Nesta versão, o sistema concentra-se no fluxo de **criação, consulta e cancelamento controlado de pedidos**. Cada pedido possui um cliente, uma lista de itens e um status de acompanhamento.
 
 As funcionalidades de estoque, fidelização e outros canais de atendimento fazem parte da visão de evolução do projeto e poderão ser incorporadas em versões futuras.
 
@@ -18,6 +18,7 @@ As funcionalidades de estoque, fidelização e outros canais de atendimento faze
 - Separar apresentação, regras de negócio e persistência de dados.
 - Validar informações recebidas antes da gravação no banco.
 - Calcular o total do pedido a partir dos seus itens.
+- Controlar o ciclo inicial do pedido com os status `RECEBIDO` e `CANCELADO`.
 - Manter uma base preparada para testes e futuras expansões.
 
 ## Evolução da solução
@@ -117,7 +118,7 @@ Content-Type: application/json
 
 #### Validações
 
-A API rejeita requisições que não possuam cliente, que tenham a lista de itens vazia ou que contenham produto, quantidade ou preço inválidos. Nesses casos, retorna `400 Bad Request` com uma mensagem de erro em JSON.
+A API rejeita requisições que não possuam cliente, que tenham a lista de itens vazia ou que contenham produto, quantidade ou preço inválidos. Nesses casos, retorna `400 Bad Request` com uma mensagem de erro em JSON. Todo pedido novo recebe o status `RECEBIDO`.
 
 ### Listar pedidos
 
@@ -134,6 +135,23 @@ GET /api/pedidos/:id
 ```
 
 Retorna um pedido específico. Quando o identificador não existe, a API responde com `404 Not Found`.
+
+### Cancelar pedido
+
+```http
+PATCH /api/pedidos/:id/cancelamento
+```
+
+Permite cancelar um pedido enquanto ele estiver com status `RECEBIDO`. A resposta será `409 Conflict` se o pedido já estiver em outro estado.
+
+#### Resposta
+
+```json
+{
+  "id": 1,
+  "status": "CANCELADO"
+}
+```
 
 ## Execução local
 
@@ -161,7 +179,7 @@ Para executar os testes automatizados:
 npm test
 ```
 
-Os cenários cobrem a criação bem-sucedida de um pedido, a ausência do identificador do cliente, a validação de quantidade inválida, a listagem, a busca por identificador e o retorno de pedido inexistente.
+Os cenários cobrem a criação bem-sucedida de um pedido, a ausência do identificador do cliente, a validação de quantidade inválida, a listagem, a busca por identificador, o retorno de pedido inexistente e o cancelamento controlado.
 
 O projeto também possui uma rotina em **GitHub Actions**. A cada alteração enviada ao branch `main`, o GitHub instala as dependências, inicializa o banco e executa os testes automaticamente.
 
@@ -173,6 +191,7 @@ O projeto também possui uma rotina em **GitHub Actions**. A cada alteração en
 - Helmet habilitado para proteção dos cabeçalhos HTTP.
 - CORS configurado para permitir a integração com clientes externos.
 - Testes automatizados executados no pipeline do GitHub.
+- Regra de negócio explícita para cancelamento somente no status `RECEBIDO`.
 
 ## Próximas etapas
 

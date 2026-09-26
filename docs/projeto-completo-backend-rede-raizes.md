@@ -1,5 +1,7 @@
 # Projeto Multidisciplinar: Rede Raízes do Nordeste (Backend V2)
 
+> Documento complementar atualizado: a versão publicada também possui status inicial `RECEBIDO` e cancelamento controlado por `PATCH /api/pedidos/:id/cancelamento`.
+
 Este repositório contém a implementação completa, testada e modularizada do backend da **Rede Raízes do Nordeste**, desenvolvido em **Node.js, Express e SQLite3**.
 
 ---
