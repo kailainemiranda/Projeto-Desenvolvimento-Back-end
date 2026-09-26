@@ -85,6 +85,15 @@ Armazena os produtos associados ao pedido, incluindo quantidade e preço unitár
 
 ## Endpoints disponíveis
 
+### Autenticação
+
+```http
+POST /api/auth/register
+POST /api/auth/login
+```
+
+O cadastro armazena a senha com hash e cria automaticamente uma conta de fidelidade com saldo inicial zero. O login devolve um token JWT; use-o nas rotas protegidas com o cabeçalho `Authorization: Bearer <token>`.
+
 ### Criar pedido
 
 ```http
@@ -144,6 +153,24 @@ PATCH /api/pedidos/:id/cancelamento
 
 Permite cancelar um pedido enquanto ele estiver com status `RECEBIDO`. A resposta será `409 Conflict` se o pedido já estiver em outro estado.
 
+### Estoque
+
+```http
+POST /api/estoque/produtos
+POST /api/estoque/movimentar
+```
+
+As rotas exigem autenticação. A movimentação aceita `ENTRADA` e `SAIDA`, impede saldo negativo e registra o histórico da operação.
+
+### Fidelidade
+
+```http
+GET /api/fidelidade/saldo
+POST /api/fidelidade/resgatar
+```
+
+As rotas exigem autenticação e permitem consultar ou resgatar pontos do usuário.
+
 #### Resposta
 
 ```json
@@ -192,6 +219,9 @@ O projeto também possui uma rotina em **GitHub Actions**. A cada alteração en
 - CORS configurado para permitir a integração com clientes externos.
 - Testes automatizados executados no pipeline do GitHub.
 - Regra de negócio explícita para cancelamento somente no status `RECEBIDO`.
+- Senhas armazenadas com hash bcrypt e sessões representadas por JWT.
+- Controle de estoque com histórico de movimentações.
+- Conta de fidelidade individual com histórico de resgates.
 
 ## Próximas etapas
 
