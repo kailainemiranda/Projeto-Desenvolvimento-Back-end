@@ -41,6 +41,7 @@ describe('POST /api/pedidos', () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('clienteId', 10);
     expect(response.body.total).toBeCloseTo(11.98);
   });
 
@@ -60,5 +61,34 @@ describe('POST /api/pedidos', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBeDefined();
+  });
+});
+
+describe('GET /api/pedidos', () => {
+  it('lista os pedidos cadastrados com seus itens', async () => {
+    const response = await request(app).get('/api/pedidos');
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body[0]).toHaveProperty('itens');
+  });
+
+  it('busca um pedido pelo identificador', async () => {
+    const created = await request(app)
+      .post('/api/pedidos')
+      .send({ clienteId: 20, itens: [{ produto: 'Milho', quantidade: 1, precoUnitario: 8 }] });
+
+    const response = await request(app).get(`/api/pedidos/${created.body.id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('id', created.body.id);
+    expect(response.body.itens[0].produto).toBe('Milho');
+  });
+
+  it('retorna 404 para pedido inexistente', async () => {
+    const response = await request(app).get('/api/pedidos/999999');
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Pedido não encontrado.');
   });
 });

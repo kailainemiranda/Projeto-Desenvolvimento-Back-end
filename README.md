@@ -8,13 +8,13 @@ A aplicação disponibiliza uma API RESTful para registrar pedidos, validar seus
 
 ## Escopo atual
 
-Nesta versão, o sistema concentra-se no fluxo de **criação de pedidos**. Cada pedido possui um cliente e uma lista de itens, contendo produto, quantidade e preço unitário.
+Nesta versão, o sistema concentra-se no fluxo de **criação e consulta de pedidos**. Cada pedido possui um cliente e uma lista de itens, contendo produto, quantidade e preço unitário.
 
 As funcionalidades de estoque, fidelização e outros canais de atendimento fazem parte da visão de evolução do projeto e poderão ser incorporadas em versões futuras.
 
 ## Objetivos
 
-- Disponibilizar uma API simples e consistente para criação de pedidos.
+- Disponibilizar uma API simples e consistente para criação e consulta de pedidos.
 - Separar apresentação, regras de negócio e persistência de dados.
 - Validar informações recebidas antes da gravação no banco.
 - Calcular o total do pedido a partir dos seus itens.
@@ -82,7 +82,7 @@ Armazena o identificador do cliente, o valor total e a data de criação.
 
 Armazena os produtos associados ao pedido, incluindo quantidade e preço unitário. A coluna `pedidoId` relaciona cada item ao seu pedido.
 
-## Endpoint disponível
+## Endpoints disponíveis
 
 ### Criar pedido
 
@@ -119,6 +119,22 @@ Content-Type: application/json
 
 A API rejeita requisições que não possuam cliente, que tenham a lista de itens vazia ou que contenham produto, quantidade ou preço inválidos. Nesses casos, retorna `400 Bad Request` com uma mensagem de erro em JSON.
 
+### Listar pedidos
+
+```http
+GET /api/pedidos
+```
+
+Retorna os pedidos cadastrados, incluindo seus itens, ordenados do mais recente para o mais antigo.
+
+### Buscar pedido por identificador
+
+```http
+GET /api/pedidos/:id
+```
+
+Retorna um pedido específico. Quando o identificador não existe, a API responde com `404 Not Found`.
+
 ## Execução local
 
 > O ambiente precisa ter Node.js 20 ou versão compatível instalado.
@@ -145,7 +161,7 @@ Para executar os testes automatizados:
 npm test
 ```
 
-Os cenários cobrem a criação bem-sucedida de um pedido, a ausência do identificador do cliente e a validação de quantidade inválida.
+Os cenários cobrem a criação bem-sucedida de um pedido, a ausência do identificador do cliente, a validação de quantidade inválida, a listagem, a busca por identificador e o retorno de pedido inexistente.
 
 O projeto também possui uma rotina em **GitHub Actions**. A cada alteração enviada ao branch `main`, o GitHub instala as dependências, inicializa o banco e executa os testes automaticamente.
 

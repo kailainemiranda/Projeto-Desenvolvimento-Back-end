@@ -25,9 +25,32 @@ exports.criarPedido = async (req, res) => {
       0
     );
 
-    const pedidoId = await Pedido.criar(clienteId, total, itens);
+    const pedidoId = await Pedido.criar(clienteId, itens, total);
 
-    return res.status(201).json({ id: pedidoId, total });
+    return res.status(201).json({ id: pedidoId, clienteId, total, mensagem: 'Pedido criado com sucesso' });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.listarPedidos = async (req, res) => {
+  try {
+    const pedidos = await Pedido.listarTodos();
+    return res.status(200).json(pedidos);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.buscarPedidoPorId = async (req, res) => {
+  try {
+    const pedido = await Pedido.buscarPorId(req.params.id);
+
+    if (!pedido) {
+      return res.status(404).json({ error: 'Pedido não encontrado.' });
+    }
+
+    return res.status(200).json(pedido);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
