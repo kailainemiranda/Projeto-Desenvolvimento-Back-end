@@ -170,3 +170,7 @@ O projeto também possui uma rotina em **GitHub Actions**. A cada alteração en
 ## Contexto acadêmico
 
 Projeto desenvolvido na disciplina de Projeto Multidisciplinar: Engenharia de Software, do curso de Análise e Desenvolvimento de Sistemas da UNINTER.
+
+## Documentação complementar
+
+O documento completo do projeto, com a fundamentação, a arquitetura, os exemplos de código e o plano de evolução, está disponível em [projeto-completo-backend-rede-raizes.md](docs/projeto-completo-backend-rede-raizes.md).
