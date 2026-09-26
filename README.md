@@ -8,7 +8,7 @@ A aplicação disponibiliza uma API RESTful para registrar pedidos, validar seus
 
 ## Escopo atual
 
-Nesta versão, o sistema concentra-se no fluxo de **criação, consulta e cancelamento controlado de pedidos**. Cada pedido possui um cliente, uma lista de itens e um status de acompanhamento.
+Nesta versão, o sistema concentra-se no fluxo de **criação, consulta e cancelamento controlado de pedidos**. Cada pedido possui um cliente, uma lista de itens e um status de acompanhamento. Quando criado por usuário autenticado, o pedido também baixa o estoque e gera um ponto a cada R$ 10,00.
 
 As funcionalidades de estoque, fidelização e outros canais de atendimento fazem parte da visão de evolução do projeto e poderão ser incorporadas em versões futuras.
 
@@ -153,6 +153,26 @@ PATCH /api/pedidos/:id/cancelamento
 
 Permite cancelar um pedido enquanto ele estiver com status `RECEBIDO`. A resposta será `409 Conflict` se o pedido já estiver em outro estado.
 
+O cancelamento ocorre em transação: os itens retornam ao estoque e os pontos gerados são estornados. Se alguma etapa falhar, nenhuma alteração é confirmada.
+
+### Atualizar status
+
+```http
+PUT /api/pedidos/:id
+Authorization: Bearer <token>
+```
+
+Aceita os status `RECEBIDO`, `EM_PREPARO`, `PRONTO`, `ENTREGUE` e `CANCELADO`.
+
+### Excluir ou cancelar com estorno
+
+```http
+DELETE /api/pedidos/:id
+Authorization: Bearer <token>
+```
+
+Para preservar o histórico, a exclusão lógica cancela o pedido e executa o estorno de estoque e pontos.
+
 ### Estoque
 
 ```http
@@ -219,6 +239,7 @@ O projeto também possui uma rotina em **GitHub Actions**. A cada alteração en
 - CORS configurado para permitir a integração com clientes externos.
 - Testes automatizados executados no pipeline do GitHub.
 - Regra de negócio explícita para cancelamento somente no status `RECEBIDO`.
+- Transação única para pedido, estoque e pontos, com rollback em caso de estoque insuficiente.
 - Senhas armazenadas com hash bcrypt e sessões representadas por JWT.
 - Controle de estoque com histórico de movimentações.
 - Conta de fidelidade individual com histórico de resgates.

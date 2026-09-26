@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "init-db": "node init_db.js",
-    "test": "jest --runInBand tests"
+    "test": "jest --runInBand --detectOpenHandles --forceExit tests"
   },
   "dependencies": {
     "cors": "^2.8.5",

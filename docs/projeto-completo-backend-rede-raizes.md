@@ -30,6 +30,17 @@ rede-raizes-dn/
 └── README.md                  # Instruções de execução e arquitetura
 ```
 
+## Atualização da implementação
+
+A versão atual do repositório complementa o backend com autenticação JWT, cadastro de produtos, movimentações de estoque, fidelidade e integração transacional na criação de pedidos. Um pedido autenticado baixa os itens disponíveis e gera um ponto a cada R$ 10,00; em caso de estoque insuficiente, a transação sofre rollback. O cancelamento autorizado estorna estoque e pontos.
+
+Endpoints adicionais:
+
+- `POST /api/auth/register` e `POST /api/auth/login`
+- `POST /api/estoque/produtos` e `POST /api/estoque/movimentar`
+- `GET /api/fidelidade/saldo` e `POST /api/fidelidade/resgatar`
+- `PUT /api/pedidos/:id` e `DELETE /api/pedidos/:id`
+
 ---
 
 ## 🛠️ Arquivos do Projeto
