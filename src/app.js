@@ -10,4 +10,8 @@ app.use(express.json());
 
 app.use('/api/pedidos', require('./routes/pedidoRoutes'));
 
+app.use((error, req, res, next) => {
+  res.status(500).json({ error: error.message });
+});
+
 module.exports = app;

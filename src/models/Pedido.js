@@ -11,25 +11,25 @@ class Pedido {
       db.run(
         'INSERT INTO pedidos (clienteId, total) VALUES (?, ?)',
         [clienteId, total],
-        function (err) {
-          if (err) {
+        function inserirPedido(error) {
+          if (error) {
             db.close();
-            return reject(err);
+            return reject(error);
           }
 
           const pedidoId = this.lastID;
-          const stmt = db.prepare(
+          const statement = db.prepare(
             'INSERT INTO itens_pedido (pedidoId, produto, quantidade, precoUnitario) VALUES (?, ?, ?, ?)'
           );
 
           itens.forEach((item) => {
-            stmt.run(pedidoId, item.produto, item.quantidade, item.precoUnitario);
+            statement.run(pedidoId, item.produto, item.quantidade, item.precoUnitario);
           });
 
-          stmt.finalize((errFinal) => {
+          statement.finalize((finalizeError) => {
             db.close();
-            if (errFinal) return reject(errFinal);
-            resolve(pedidoId);
+            if (finalizeError) return reject(finalizeError);
+            return resolve(pedidoId);
           });
         }
       );

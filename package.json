@@ -1,12 +1,12 @@
 {
   "name": "rede-raizes-backend",
   "version": "2.0.0",
-  "description": "API RESTful para gestão de pedidos, estoque e fidelização de clientes.",
-  "main": "server.js",
+  "description": "API RESTful para gestão de pedidos da Rede Raízes.",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node src/server.js",
     "init-db": "node init_db.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand tests"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -9,7 +9,11 @@ exports.criarPedido = async (req, res) => {
     }
 
     const itemInvalido = itens.some(
-      (i) => !i.produto || !i.quantidade || i.quantidade <= 0 || !i.precoUnitario || i.precoUnitario <= 0
+      (item) => !item.produto
+        || !Number.isFinite(item.quantidade)
+        || item.quantidade <= 0
+        || !Number.isFinite(item.precoUnitario)
+        || item.precoUnitario <= 0
     );
 
     if (itemInvalido) {
