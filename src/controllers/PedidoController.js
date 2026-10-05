@@ -2,7 +2,13 @@ const Pedido = require('../models/Pedido');
 
 exports.criarPedidoIntegrado = async (req, res) => {
   try {
-    const { itens } = req.body;
+    const { itens, canalPedido } = req.body;
+    const canaisPermitidos = ['APP', 'TOTEM', 'BALCAO', 'PICKUP', 'WEB'];
+    if (!canaisPermitidos.includes(canalPedido)) {
+      return res.status(400).json({
+        error: 'canalPedido é obrigatório e deve ser APP, TOTEM, BALCAO, PICKUP ou WEB.'
+      });
+    }
     const itensValidos = Array.isArray(itens) && itens.length > 0 && itens.every(
       (item) => Number.isInteger(item.produtoId)
         && Number.isInteger(item.quantidade)
@@ -15,7 +21,7 @@ exports.criarPedidoIntegrado = async (req, res) => {
       return res.status(400).json({ error: 'O pedido deve conter itens válidos.' });
     }
 
-    const pedido = await Pedido.criarIntegrado(req.user.id, itens);
+    const pedido = await Pedido.criarIntegrado(req.user.id, itens, canalPedido);
     return res.status(201).json({
       ...pedido,
       mensagem: 'Pedido criado, estoque atualizado e pontos creditados.'
@@ -66,7 +72,11 @@ exports.criarPedido = async (req, res) => {
 
 exports.listarPedidos = async (req, res) => {
   try {
-    const pedidos = await Pedido.listarTodos();
+    const canaisPermitidos = ['APP', 'TOTEM', 'BALCAO', 'PICKUP', 'WEB'];
+    if (req.query.canalPedido && !canaisPermitidos.includes(req.query.canalPedido)) {
+      return res.status(400).json({ error: 'canalPedido inválido.' });
+    }
+    const pedidos = await Pedido.listarTodos(req.query.canalPedido);
     return res.status(200).json(pedidos);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -110,6 +120,25 @@ exports.atualizarPedido = async (req, res) => {
     return res.json({ id: Number(req.params.id), status });
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.registrarPagamentoMock = async (req, res) => {
+  const { status = 'APROVADO', formaPagamento = 'MOCK' } = req.body;
+  if (!['APROVADO', 'RECUSADO'].includes(status)) {
+    return res.status(400).json({ error: 'O status do pagamento deve ser APROVADO ou RECUSADO.' });
+  }
+
+  try {
+    const resultado = await Pedido.registrarPagamentoMock(
+      req.params.id,
+      formaPagamento,
+      status,
+      req.body.payload || {}
+    );
+    return res.status(200).json(resultado);
+  } catch (error) {
+    return res.status(error.status || 500).json({ error: error.message });
   }
 };
 

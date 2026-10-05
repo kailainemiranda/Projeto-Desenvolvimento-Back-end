@@ -30,7 +30,7 @@ function consultar(db, sql, params = []) {
 }
 
 class Pedido {
-  static criarIntegrado(usuarioId, itens) {
+  static criarIntegrado(usuarioId, itens, canalPedido) {
     return new Promise((resolve, reject) => {
       const db = abrirBanco();
 
@@ -79,8 +79,8 @@ class Pedido {
 
           const pedido = await executar(
             db,
-            'INSERT INTO pedidos (clienteId, total, status) VALUES (?, ?, ?)',
-            [usuarioId, total, 'RECEBIDO']
+            'INSERT INTO pedidos (clienteId, total, status, canalPedido) VALUES (?, ?, ?, ?)',
+            [usuarioId, total, 'RECEBIDO', canalPedido]
           );
 
           for (const item of itensPersistidos) {
@@ -173,18 +173,19 @@ class Pedido {
     });
   }
 
-  static listarTodos() {
+  static listarTodos(canalPedido) {
     return new Promise((resolve, reject) => {
       const db = abrirBanco();
       const query = `
-        SELECT p.id AS pedidoId, p.clienteId, p.total, p.status, p.dataCriacao,
+        SELECT p.id AS pedidoId, p.clienteId, p.total, p.status, p.canalPedido, p.dataCriacao,
                i.id AS itemId, i.produto, i.quantidade, i.precoUnitario
         FROM pedidos p
         LEFT JOIN itens_pedido i ON p.id = i.pedidoId
+        ${canalPedido ? 'WHERE p.canalPedido = ?' : ''}
         ORDER BY p.id DESC
       `;
 
-      db.all(query, [], (error, rows) => {
+      db.all(query, canalPedido ? [canalPedido] : [], (error, rows) => {
         fecharBanco(db).then(() => {
           if (error) {
             reject(error);
@@ -200,7 +201,7 @@ class Pedido {
     return new Promise((resolve, reject) => {
       const db = abrirBanco();
       const query = `
-        SELECT p.id AS pedidoId, p.clienteId, p.total, p.status, p.dataCriacao,
+        SELECT p.id AS pedidoId, p.clienteId, p.total, p.status, p.canalPedido, p.dataCriacao,
                i.id AS itemId, i.produto, i.quantidade, i.precoUnitario
         FROM pedidos p
         LEFT JOIN itens_pedido i ON p.id = i.pedidoId
@@ -213,9 +214,57 @@ class Pedido {
             reject(error);
             return;
           }
+
           resolve(rows.length === 0 ? null : Pedido.agruparResultados(rows)[0]);
         });
       });
+    });
+  }
+
+  static registrarPagamentoMock(id, formaPagamento, status, payload) {
+    return new Promise((resolve, reject) => {
+      const db = abrirBanco();
+
+      (async () => {
+        try {
+          await executar(db, 'BEGIN TRANSACTION');
+          const pedido = await consultar(db, 'SELECT id, status FROM pedidos WHERE id = ?', [id]);
+          if (!pedido) {
+            const error = new Error('Pedido não encontrado.');
+            error.status = 404;
+            throw error;
+          }
+          if (pedido.status !== 'RECEBIDO') {
+            const error = new Error('O pagamento só pode ser registrado para pedidos recebidos.');
+            error.status = 409;
+            throw error;
+          }
+
+          await executar(
+            db,
+            `INSERT INTO pagamentos (pedido_id, forma_pagamento, status, payload)
+             VALUES (?, ?, ?, ?)
+             ON CONFLICT(pedido_id) DO UPDATE SET
+               forma_pagamento = excluded.forma_pagamento,
+               status = excluded.status,
+               payload = excluded.payload`,
+            [id, formaPagamento, status, JSON.stringify(payload)]
+          );
+          const novoStatus = status === 'APROVADO' ? 'EM_PREPARO' : 'CANCELADO';
+          await executar(db, 'UPDATE pedidos SET status = ? WHERE id = ?', [novoStatus, id]);
+          await executar(db, 'COMMIT');
+          await fecharBanco(db);
+          resolve({
+            pedidoId: Number(id),
+            pagamento: { formaPagamento, status, payload },
+            statusPedido: novoStatus
+          });
+        } catch (error) {
+          await executar(db, 'ROLLBACK').catch(() => {});
+          await fecharBanco(db);
+          reject(error);
+        }
+      })();
     });
   }
 
@@ -294,6 +343,7 @@ class Pedido {
           clienteId: row.clienteId,
           total: row.total,
           status: row.status,
+          canalPedido: row.canalPedido,
           dataCriacao: row.dataCriacao,
           itens: []
         });

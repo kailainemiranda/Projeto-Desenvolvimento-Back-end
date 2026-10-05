@@ -8,9 +8,7 @@ A aplicação disponibiliza uma API RESTful para registrar pedidos, validar seus
 
 ## Escopo atual
 
-Nesta versão, o sistema concentra-se no fluxo de **criação, consulta e cancelamento controlado de pedidos**. Cada pedido possui um cliente, uma lista de itens e um status de acompanhamento. Quando criado por usuário autenticado, o pedido também baixa o estoque e gera um ponto a cada R$ 10,00.
-
-As funcionalidades de estoque, fidelização e outros canais de atendimento fazem parte da visão de evolução do projeto e poderão ser incorporadas em versões futuras.
+Nesta versão, o sistema concentra-se no fluxo de **autenticação, criação, consulta, atualização, pagamento mock e cancelamento controlado de pedidos**. Cada pedido possui um cliente, uma lista de itens, um canal de origem e um status de acompanhamento. Quando criado por usuário autenticado, o pedido também baixa o estoque e gera pontos de fidelidade.
 
 ## Objetivos
 
@@ -18,7 +16,8 @@ As funcionalidades de estoque, fidelização e outros canais de atendimento faze
 - Separar apresentação, regras de negócio e persistência de dados.
 - Validar informações recebidas antes da gravação no banco.
 - Calcular o total do pedido a partir dos seus itens.
-- Controlar o ciclo inicial do pedido com os status `RECEBIDO` e `CANCELADO`.
+- Controlar o ciclo do pedido com os status `RECEBIDO`, `EM_PREPARO`, `PRONTO`, `ENTREGUE` e `CANCELADO`.
+- Simular pagamentos aprovados e recusados, persistindo o resultado do pagamento.
 - Manter uma base preparada para testes e futuras expansões.
 
 ## Evolução da solução
@@ -32,10 +31,11 @@ A primeira versão concentrava a configuração do servidor, as rotas e a lógic
 A versão atual separa as principais responsabilidades da aplicação:
 
 - **Aplicação:** configura o Express e os middlewares.
-- **Rotas:** define os caminhos públicos da API.
-- **Controller:** valida a requisição e coordena o caso de uso.
-- **Model:** realiza a persistência dos pedidos e itens no SQLite.
-- **Testes:** verifica os principais comportamentos do endpoint.
+- **Rotas:** define os caminhos da API e aplica autenticação nas operações protegidas.
+- **Controllers:** validam as requisições e coordenam os casos de uso.
+- **Middleware:** valida tokens JWT.
+- **Models:** realizam regras de negócio, transações e persistência no SQLite.
+- **Testes:** verificam autenticação, pedidos, estoque, fidelidade e pagamento mock.
 
 ## Tecnologias
 
@@ -57,12 +57,12 @@ A versão atual separa as principais responsabilidades da aplicação:
 ├── src/
 │   ├── app.js                         # Configuração do Express e middlewares
 │   ├── server.js                      # Inicialização do servidor
-│   ├── controllers/
-│   │   └── PedidoController.js        # Validação e regra do caso de uso
+│   ├── controllers/                   # Auth, pedidos, estoque e fidelidade
+│   ├── middleware/
+│   │   └── authMiddleware.js          # Validação do JWT
 │   ├── models/
-│   │   └── Pedido.js                  # Persistência no SQLite
-│   └── routes/
-│       └── pedidoRoutes.js            # Rota de pedidos
+│   │   └── Pedido.js                  # Regras e transações de pedidos
+│   └── routes/                        # Auth, pedidos, estoque e fidelidade
 ├── tests/
 │   └── pedido.test.js                 # Testes automatizados
 ├── init_db.js                         # Criação idempotente das tabelas
@@ -73,15 +73,23 @@ A versão atual separa as principais responsabilidades da aplicação:
 
 ## Modelo de dados
 
-O banco possui duas tabelas relacionadas:
+O banco possui tabelas para usuários, pedidos, itens, produtos, estoque, fidelidade e pagamentos:
 
 ### `pedidos`
 
-Armazena o identificador do cliente, o valor total e a data de criação.
+Armazena o cliente, o valor total, o status, o canal de pedido e a data de criação.
 
 ### `itens_pedido`
 
 Armazena os produtos associados ao pedido, incluindo quantidade e preço unitário. A coluna `pedidoId` relaciona cada item ao seu pedido.
+
+### `pagamentos`
+
+Armazena o pagamento mock associado ao pedido, a forma de pagamento, o status, o payload e a data de criação.
+
+### `usuarios`, `produtos`, `movimentacoes_estoque`, `fidelidade` e `historico_fidelidade`
+
+Armazenam autenticação, catálogo/estoque, histórico de movimentações e pontuação de fidelidade.
 
 ## Endpoints disponíveis
 
@@ -98,6 +106,7 @@ O cadastro armazena a senha com hash e cria automaticamente uma conta de fidelid
 
 ```http
 POST /api/pedidos
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
@@ -105,16 +114,19 @@ Content-Type: application/json
 
 ```json
 {
+  "canalPedido": "APP",
   "clienteId": 123,
   "itens": [
     {
-      "produto": "Feijão",
+      "produtoId": 1,
       "quantidade": 2,
       "precoUnitario": 5.99
     }
   ]
 }
 ```
+
+`canalPedido` é obrigatório e aceita `APP`, `TOTEM`, `BALCAO`, `PICKUP` ou `WEB`.
 
 #### Resposta de sucesso `201 Created`
 
@@ -135,7 +147,12 @@ A API rejeita requisições que não possuam cliente, que tenham a lista de iten
 GET /api/pedidos
 ```
 
-Retorna os pedidos cadastrados, incluindo seus itens, ordenados do mais recente para o mais antigo.
+Essa rota não aplica autenticação no código atual. Retorna os pedidos cadastrados, incluindo seus itens, ordenados do mais recente para o mais antigo.
+É possível filtrar pelo canal de origem:
+
+```http
+GET /api/pedidos?canalPedido=TOTEM
+```
 
 ### Buscar pedido por identificador
 
@@ -143,7 +160,7 @@ Retorna os pedidos cadastrados, incluindo seus itens, ordenados do mais recente 
 GET /api/pedidos/:id
 ```
 
-Retorna um pedido específico. Quando o identificador não existe, a API responde com `404 Not Found`.
+Essa rota não aplica autenticação no código atual. Retorna um pedido específico. Quando o identificador não existe, a API responde com `404 Not Found`.
 
 ### Cancelar pedido
 
@@ -163,6 +180,30 @@ Authorization: Bearer <token>
 ```
 
 Aceita os status `RECEBIDO`, `EM_PREPARO`, `PRONTO`, `ENTREGUE` e `CANCELADO`.
+
+### Registrar pagamento mock
+
+```http
+POST /api/pedidos/:id/pagamento-mock
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+#### Requisição
+
+```json
+{
+  "formaPagamento": "PIX",
+  "status": "APROVADO",
+  "payload": {
+    "transacao": "mock-123"
+  }
+}
+```
+
+O pagamento mock aceita `APROVADO` ou `RECUSADO`. Quando aprovado, o pedido passa
+para `EM_PREPARO`. Quando recusado, o pedido passa para `CANCELADO`. O resultado
+é persistido na tabela `pagamentos`.
 
 ### Excluir ou cancelar com estorno
 
@@ -226,6 +267,19 @@ Para executar os testes automatizados:
 npm test
 ```
 
+## Evidências para o roteiro
+
+- Fluxo integrado de pedido, estoque e fidelidade: `tests/pedido.test.js`.
+- Autenticação e token JWT: `tests/auth.test.js`.
+- Pagamento mock, canal e filtro: testes de pedido e endpoint
+  `POST /api/pedidos/:id/pagamento-mock`.
+- Pipeline automatizado: `.github/workflows/tests.yml`.
+- Coleção Postman: `docs/postman/raizes-nordeste.postman_collection.json`.
+- Diagramas técnicos do back-end: `docs/diagramas-backend.md`.
+
+O projeto ainda não possui Swagger/OpenAPI. A coleção Postman deve ser executada
+depois de inicializar o banco e cadastrar um produto de estoque.
+
 Os cenários cobrem a criação bem-sucedida de um pedido, a ausência do identificador do cliente, a validação de quantidade inválida, a listagem, a busca por identificador, o retorno de pedido inexistente e o cancelamento controlado.
 
 O projeto também possui uma rotina em **GitHub Actions**. A cada alteração enviada ao branch `main`, o GitHub instala as dependências, inicializa o banco e executa os testes automaticamente.
@@ -246,11 +300,11 @@ O projeto também possui uma rotina em **GitHub Actions**. A cada alteração en
 
 ## Próximas etapas
 
-- Adicionar consulta e atualização de pedidos.
-- Incorporar controle de estoque.
-- Criar regras de fidelização de clientes.
-- Avaliar a adoção de um ORM, como Prisma ou Sequelize.
-- Expandir a cobertura de testes.
+- Adicionar documentação Swagger/OpenAPI.
+- Avaliar gestão de unidades e cardápio por unidade.
+- Implementar logs e auditoria de ações sensíveis.
+- Criar regras de perfil/role além da autenticação por token.
+- Expandir a cobertura de testes e anexar evidências das execuções.
 - Integrar a API a uma interface web, totens ou aplicativo móvel.
 
 ## Contexto acadêmico
@@ -260,3 +314,6 @@ Projeto desenvolvido na disciplina de Projeto Multidisciplinar: Engenharia de So
 ## Documentação complementar
 
 O documento completo do projeto, com a fundamentação, a arquitetura, os exemplos de código e o plano de evolução, está disponível em [projeto-completo-backend-rede-raizes.md](docs/projeto-completo-backend-rede-raizes.md).
+
+Os diagramas de componentes, entidade-relacionamento e sequência da API estão
+disponíveis em [diagramas-backend.md](docs/diagramas-backend.md).

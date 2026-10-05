@@ -11,7 +11,20 @@ db.serialize(() => {
       clienteId INTEGER NOT NULL,
       total REAL NOT NULL,
       status TEXT NOT NULL DEFAULT 'RECEBIDO',
+      canalPedido TEXT NOT NULL DEFAULT 'APP',
       dataCriacao DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pagamentos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pedido_id INTEGER NOT NULL UNIQUE,
+      forma_pagamento TEXT NOT NULL,
+      status TEXT NOT NULL,
+      payload TEXT,
+      data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
     )
   `);
 
@@ -75,6 +88,12 @@ db.serialize(() => {
   db.run(`ALTER TABLE pedidos ADD COLUMN status TEXT NOT NULL DEFAULT 'RECEBIDO'`, (error) => {
     if (error && !error.message.includes('duplicate column name')) {
       console.error('Erro ao atualizar a tabela pedidos:', error.message);
+    }
+  });
+
+  db.run(`ALTER TABLE pedidos ADD COLUMN canalPedido TEXT NOT NULL DEFAULT 'APP'`, (error) => {
+    if (error && !error.message.includes('duplicate column name')) {
+      console.error('Erro ao adicionar canalPedido:', error.message);
     }
   });
 
