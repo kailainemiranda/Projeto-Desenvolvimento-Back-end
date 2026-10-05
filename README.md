@@ -166,6 +166,7 @@ Essa rota não aplica autenticação no código atual. Retorna um pedido especí
 
 ```http
 PATCH /api/pedidos/:id/cancelamento
+Authorization: Bearer <token>
 ```
 
 Permite cancelar um pedido enquanto ele estiver com status `RECEBIDO`. A resposta será `409 Conflict` se o pedido já estiver em outro estado.
@@ -317,3 +318,22 @@ O documento completo do projeto, com a fundamentação, a arquitetura, os exempl
 
 Os diagramas de componentes, entidade-relacionamento e sequência da API estão
 disponíveis em [diagramas-backend.md](docs/diagramas-backend.md).
+
+### Diagramas técnicos
+
+Os diagramas abaixo representam somente o back-end implementado:
+
+#### Componentes e fluxo interno
+
+![Diagrama de componentes do back-end](docs/diagramas/componentes.png)
+
+#### Modelo entidade-relacionamento do SQLite
+
+![Diagrama entidade-relacionamento do SQLite](docs/diagramas/der.png)
+
+O DER utiliza a coluna `produto` em `itens_pedido`, conforme a definição atual
+da tabela em `init_db.js`.
+
+#### Sequência da API de pedidos
+
+![Diagrama de sequência da API de pedidos](docs/diagramas/sequencia.png)
