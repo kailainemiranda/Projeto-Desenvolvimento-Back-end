@@ -4,7 +4,6 @@ Os diagramas abaixo representam a implementação atual do repositório. Eles de
 componentes de servidor, persistência SQLite e comunicação HTTP da API; não representam
 telas ou componentes de front-end.
 
-## Diagrama de componentes
 
 ![Diagrama de componentes do back-end](./diagramas/componentes.png)
 
