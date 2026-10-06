@@ -54,8 +54,3 @@ Os itens abaixo não devem ser declarados como implementados sem evidência adic
 | T09 | Pagamento mock aprovado | `200` e pedido `EM_PREPARO` |
 | T10 | Pagamento mock recusado | `200` e pedido `CANCELADO` |
 
-## Declaração de uso de IA
-
-O roteiro exige declaração de ferramentas e trechos aproveitados quando IA for utilizada.
-Antes da entrega, registre a ferramenta utilizada, descreva quais sugestões foram aceitas
-e revise todo o texto e código para garantir domínio e autoria das decisões.
