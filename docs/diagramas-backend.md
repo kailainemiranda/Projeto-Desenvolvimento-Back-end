@@ -1,7 +1,7 @@
 # Diagramas do back-end
 
 Os diagramas abaixo representam a implementação atual do repositório. Eles descrevem
-componentes de servidor, persistência SQLite e comunicação HTTP da API,dados do sistema
+componentes de servidor, persistência SQLite e comunicação HTTP da API,Dados do sistema
 
 
 ![Diagrama de componentes do back-end](./diagramas/componentes.png)
