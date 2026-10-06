@@ -1,4 +1,4 @@
-name: Backend tests
+name: Testes do backend
 
 on:
   push:
@@ -11,19 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Baixar o código
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Instalar dependências
         run: npm install
 
-      - name: Initialize database
+      - name: Inicializar banco de dados
         run: npm run init-db
 
-      - name: Run tests
+      - name: Executar testes
         run: npm test
