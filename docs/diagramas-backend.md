@@ -24,3 +24,17 @@ movimentações de estoque e fidelidade criadas em `init_db.js`.
 
 O fluxo mostra a criação autenticada do pedido e o registro posterior do pagamento
 mock, com mudança para `EM_PREPARO` quando aprovado ou `CANCELADO` quando recusado.
+
+## Diagrama de classes e modelo de dados
+
+![Diagrama de classes e modelo de dados](./diagramas/diagrama-classes-modelo-dados.jpeg)
+
+O diagrama apresenta as principais classes do domínio, seus atributos, operações e
+relacionamentos com as entidades persistidas no banco de dados.
+
+## Diagrama de casos de uso
+
+![Diagrama de casos de uso da API](./diagramas/diagrama-casos-de-uso.jpeg)
+
+O diagrama apresenta os atores e os casos de uso implementados ou previstos para o
+back-end da Rede de Lanchonetes Raízes do Nordeste.
